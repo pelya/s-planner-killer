@@ -56,6 +56,7 @@ public class NotificationListener extends NotificationListenerService {
                             ntfsRemoved.clear ();
                             monitorRemoved = true;
                         }
+                        StatusBarNotification oldNtfs[] = getActiveNotifications ();
                         cancelNotification(n.getPackageName(), n.getTag(), n.getId());
                         // Google Calendar for some reason also hides it's own notification,
                         // when we delete S Planner ntf, so we kind of restoring it here
@@ -63,10 +64,23 @@ public class NotificationListener extends NotificationListenerService {
                             Thread.sleep (1000);
                         } catch (Exception e) { }
                         synchronized (ntfsRemoved) {
-                            for (StatusBarNotification rm: ntfsRemoved) {
-                                if (!n.getPackageName().equals(rm.getPackageName())) {
-                                    ntfManager.notify(rm.getTag(), rm.getId(), rm.getNotification());
+                            try {
+                                for (StatusBarNotification rm: ntfsRemoved) {
+                                    if (!rm.getPackageName().equals(n.getPackageName())) {
+                                        for(StatusBarNotification oldNtf: oldNtfs) {
+                                            if (oldNtf != null && rm != null &&
+                                                oldNtf.getPackageName() != null && rm.getPackageName() != null &&
+                                                oldNtf.getTag() != null && rm.getTag() != null &&
+                                                oldNtf.getPackageName().equals(rm.getPackageName()) &&
+                                                oldNtf.getTag().equals(rm.getTag()) &&
+                                                oldNtf.getId() == rm.getId()) {
+                                                    ntfManager.notify(oldNtf.getTag(), oldNtf.getId(), oldNtf.getNotification());
+                                            }
+                                        }
+                                    }
                                 }
+                            } catch (Exception e) {
+                                Log.w(TAG, "Cannot add notification: " + e.toString());
                             }
                             ntfsRemoved.clear ();
                             monitorRemoved = false;
